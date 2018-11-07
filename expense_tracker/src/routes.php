@@ -178,3 +178,43 @@ $app->post('/transferMoney',function(Request $request , Response $response , arr
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
 
 });
+
+//login route
+$app->post('/login',function(Request $request , Response $response)
+{
+	require_once("db.php");
+	$input = $request->getParsedBody();
+
+	$reg_no = $input["reg_no"];
+	$password = $input["password"];
+
+	$query = "select reg_no , password as pwd from users where reg_no = '".$reg_no."';";
+	$result = $conn->query($query);
+	$row = $result->fetch_assoc();
+	if(sizeof($row)==0)
+	{
+		$message = "No such user found ";
+		$code = 2;
+	}
+	else
+	{
+		$pass = $row["pwd"];
+		if($pass == $password)
+		{
+			$message = "Login successfull";
+			$code = 1;
+		}
+		else
+		{
+			$message = "incorrect password , please try again ";
+			$code = 3;
+		}
+	}
+
+	$data = array("code"=>$code,"message"=>$message);
+
+	return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+});
