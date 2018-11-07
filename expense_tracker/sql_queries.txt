@@ -1,0 +1,65 @@
+create DATABASE expense_tracker DEFAULT CHARACTER SET utf8;
+
+create table users (
+	reg_no varchar(20) not null ,
+	name varchar(100) ,
+	email varchar(100),
+	password varchar(100),
+	contact varchar(20),
+
+	primary key(reg_no)	
+);
+
+create table budget (
+	reg_no varchar(20) not null,
+	amount integer ,
+	month varchar(20),
+
+	primary key(reg_no),
+	constraint foreign key (reg_no) references users(reg_no)
+	on update cascade on delete cascade 
+
+);
+
+create table expenditure(
+	reg_no varchar(20) not null ,
+	amount integer ,
+	tx_date date,
+	type varchar(20),
+	description varchar(300),
+
+	primary key(reg_no),
+	constraint foreign key (reg_no) references users(reg_no)
+	on update cascade on delete cascade 
+);
+
+create table balance (
+	reg_no varchar(20) not null ,
+	balance_amt integer,
+
+	primary key(reg_no),
+	constraint foreign key (reg_no) references users(reg_no)
+	on update cascade on delete cascade 
+);
+
+create table transactions (
+	reg_no varchar(20) not null ,
+	receiver_reg_no varchar(20) not null,
+	amount integer ,
+	description varchar(300),
+
+	primary key(reg_no , receiver_reg_no),
+	constraint foreign key(reg_no) references users(reg_no)
+	on delete cascade on update cascade
+);
+
+create table monthly_expenditure(
+	reg_no varchar(20) not null,
+	month varchar(20),
+	current_amount_spent integer ,
+
+	primary key(reg_no),
+	constraint foreign key (reg_no) references users(reg_no)
+	on update cascade on delete cascade 
+
+);
