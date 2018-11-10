@@ -3,16 +3,6 @@
 use Slim\Http\Request;
 use Slim\Http\Response;
 
-// Routes
-
-// $app->get('/[{name}]', function (Request $request, Response $response, array $args) {
-//     // Sample log message
-//     $this->logger->info("Slim-Skeleton '/' route");
-
-//     // Render index view
-//     return $this->renderer->render($response, 'index.phtml', $args);
-// });
-
 $app->post('/signUp',function(Request $request , Response $response)
 {
 	require_once("db.php");
@@ -243,12 +233,8 @@ $app->post('/expenditure/{reg_no}',function(Request $request , Response $respons
 	$row = $result1->fetch_assoc();
 	$budget = $row["budget"];
 	//echo($budget);
-	// $insert_query = $conn->prepare("INSERT INTO expenditure(reg_no,amount,tx_date,type,description) VALUES(?,?,?,?,?)");
-	// $insert_query->bind_param("sisss",$reg_no,$amount,$date_field,$category,$description);
-	// $insert_query->execute();
 
-	$insert_query = "INSERT INTO expenditure (reg_no,amount,tx_date,type,description) VALUES ('".$reg_no."',".$amount.",'".$date."','".$category."',".$description."');";
-	$conn->query($insert_query);
+	
 
 	//current amount spent for that month 
 	$current_query = "select current_amount_spent as amt from monthly_expenditure where reg_no = '".$reg_no."' and month = ".$month.";";
@@ -257,6 +243,10 @@ $app->post('/expenditure/{reg_no}',function(Request $request , Response $respons
 
 	if(sizeof($row)==0)
 	{
+		$insert_query = $conn->prepare("INSERT INTO expenditure(reg_no,amount,tx_date,type,description) VALUES(?,?,?,?,?)");
+		$insert_query->bind_param("sisss",$reg_no,$amount,$date,$category,$description);
+		$insert_query->execute();
+
 		$query2 = "INSERT INTO monthly_expenditure (reg_no,month,current_amount_spent) VALUES('".$reg_no."',".$month.",".$amount.");";
 		$conn->query($query2);
 
@@ -282,8 +272,12 @@ $app->post('/expenditure/{reg_no}',function(Request $request , Response $respons
 	}
 	else
 	{
+		$insert_query = $conn->prepare("INSERT INTO expenditure(reg_no,amount,tx_date,type,description) VALUES(?,?,?,?,?)");
+		$insert_query->bind_param("sisss",$reg_no,$amount,$date,$category,$description);
+		$insert_query->execute();
+
 		$current_amt = $row["amt"]+$amount;
-		echo($current_amt);
+		//echo($current_amt);
 		$query5 = "UPDATE monthly_expenditure SET current_amount_spent = ".$current_amt." where reg_no = '".$reg_no."' and month = ".$month.";";
 		$conn->query($query5);
 
@@ -306,4 +300,220 @@ $app->post('/expenditure/{reg_no}',function(Request $request , Response $respons
 
 	}
 
+});
+
+
+//get each expenditure for the particular month
+$app->get('/getExpenditures/{reg_no}/{month}',function(Request $request,Response $response,array $args)
+{
+	require_once("db.php");
+	$reg_no = $args["reg_no"];
+	$month = $args["month"];
+
+	$query = "select * from users where reg_no = '".$reg_no."';";
+	$result = $conn->query($query);
+	$row = $result->fetch_assoc();
+
+	if(sizeof($row)==0)
+	{
+		$message = "No such user exists";
+		$code = -1;
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+
+	$query2 = "select * from expenditure where reg_no = '".$reg_no."' and MONTH(tx_date) = ".$month.";";
+	$result2 = $conn->query($query2);
+	// $row2 = $result2->fetch_assoc();
+	while($row2 = $result2->fetch_assoc())
+	{
+		$data[] = $row2;
+	}
+	if(sizeof($data)==0)
+	{
+		$message = "No expenditure for that month";
+		$code = 2;
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+	
+	$message = "Success";
+	$code = 1;
+	$data2 = array("code"=>$code,"message"=>$message,"reg_no"=>$reg_no,"data"=>$data);
+	return $response->withJson($data2)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+
+});
+
+
+//get each months amount spent 
+$app->get('/monthly_expenditure/{reg_no}',function(Request $request , Response $response , array $args)
+{
+	require_once("db.php");
+	$reg_no = $args["reg_no"];
+	$query = "select * from users where reg_no = '".$reg_no."';";
+	$result = $conn->query($query);
+	$row = $result->fetch_assoc();
+	if(sizeof($row)==0)
+	{
+		$message = "No such user";
+		$code = 2;
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+
+	$query2 = "select month , current_amount_spent as amount from monthly_expenditure where reg_no = '".$reg_no."';";
+	$result2 = $conn->query($query2);
+	while($row2 = $result2->fetch_assoc())
+	{
+		$data[] = $row2;
+	}
+	if(sizeof($data)==0)
+	{
+		$message = "No expenditure for months data ";
+		$code = 3;
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+
+	$message = "Success";
+	$code = 1;
+	$data2 = array("code"=>$code,"message"=>$message,"reg_no"=>$reg_no,"data"=>$data);
+	return $response->withJson($data2)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+
+});
+
+$app->post('/setBudget',function(Request $request,Response $response)
+{
+	require_once("db.php");
+	$input = $request->getParsedBody();
+
+	$reg_no = $input["reg_no"];
+	$amount = $input["amount"];
+	$date = $input["date"];
+	$month = date('m',strtotime($date));
+	//echo($month);
+
+	$query = "select * from users where reg_no = '".$reg_no."';";
+	$result = $conn->query($query);
+	$row = $result->fetch_assoc();
+	if(sizeof($row)==0)
+	{
+		$message = "No such user";
+		$code = 3;
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+
+	$query2 = "select * from budget where reg_no = '".$reg_no."'and month = ".$month.";";
+	$result2 = $conn->query($query2);
+	$row = $result2->fetch_assoc();
+	if(sizeof($row)==0)
+	{
+		$query3 = $conn->prepare("INSERT INTO budget (reg_no,amount , month) VALUES(?,?,?)");
+		$query3->bind_param("sii",$reg_no,$amount,$month);
+		$query3->execute();
+
+		$message = "Successfully added budget : ".$amount." for month : ".$month.".";
+		$code = 1;
+
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+	else
+	{
+		$query4 = "UPDATE budget SET amount = ".$amount." where reg_no = '".$reg_no."' and month = ".$month.";";
+		$conn->query($query4);
+
+		$message = " Successfully updated budget to : ".$amount." for month : ".$month.".";
+		$code = 2;
+
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+});
+
+$app->post('/setBalance',function(Request $request,Response $response)
+{
+	require_once("db.php");
+	$input = $request->getParsedBody();
+
+	$reg_no = $input["reg_no"];
+	$amount = $input["amount"];
+	//$date = $input["date"];
+	//$month = date('m',strtotime($date));
+	//echo($month);
+
+	$query = "select * from users where reg_no = '".$reg_no."';";
+	$result = $conn->query($query);
+	$row = $result->fetch_assoc();
+	if(sizeof($row)==0)
+	{
+		$message = "No such user";
+		$code = 3;
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+
+	$query2 = "select * from balance where reg_no = '".$reg_no."';";
+	$result2 = $conn->query($query2);
+	$row = $result2->fetch_assoc();
+	if(sizeof($row)==0)
+	{
+		$query3 = $conn->prepare("INSERT INTO balance (reg_no,balance_amt) VALUES(?,?)");
+		$query3->bind_param("si",$reg_no,$amount);
+		$query3->execute();
+
+		$message = "Successfully added balance : ".$amount.";";
+		$code = 1;
+
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
+	else
+	{
+		$query4 = "UPDATE balance SET balance_amt = ".$amount." where reg_no = '".$reg_no."';";
+		$conn->query($query4);
+
+		$message = " Successfully updated budget to : ".$amount.".";
+		$code = 2;
+
+		$data = array("code"=>$code,"message"=>$message);
+		return $response->withJson($data)
+						->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+	}
 });
