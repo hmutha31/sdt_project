@@ -109,7 +109,7 @@ $app->post('/transferMoney',function(Request $request , Response $response , arr
 
 	//checking with users balance amount
 	$query = "select balance_amt as balance from balance where reg_no = '".$reg_no."';";
-	echo($query);
+	//echo($query);
 	$result = $conn->query($query);
 	$row = $result->fetch_assoc();
 	$balance = $row["balance"];
@@ -218,7 +218,7 @@ $app->post('/expenditure/{reg_no}',function(Request $request , Response $respons
 
 	$amount = $input["amount"];
 	$date = $input["date"];
-	echo ($date);
+	//echo ($date);
 	$date_field = date('Y-m-d',strtotime($date));
 	//echo ($date_field);
 	$month = date('m',strtotime($date));
