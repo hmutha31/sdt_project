@@ -144,9 +144,25 @@ $app->post('/transferMoney',function(Request $request , Response $response , arr
 				$stmnt1->execute();
 				$stmnt2->execute();
 
-				$message = "Transfer Successfull";
-				$code = 1;
+//				$message = "Transfer Successfull";
+//				$code = 1;
+//				$data = array("message"=>$message,"code"=>$code);
+
+//        			return $response->withJson($data)
+  //                                              ->withHeader('Access-Control-Allow-Origin', '*')
+    //        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+      //      ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+				
 			}
+			$message = "Transfer Successfull";
+                                $code = 1;
+                                $data = array("message"=>$message,"code"=>$code);
+
+                                return $response->withJson($data)
+                                                ->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+
 		}
 		else
 		{
@@ -159,6 +175,9 @@ $app->post('/transferMoney',function(Request $request , Response $response , arr
 		$message = "Unable to transfer funds as balance is low";
 		$code = 3;
 	}
+
+	//$message = "xyz";
+	//$code = 21;
 
 	$data = array("message"=>$message,"code"=>$code);
 
